@@ -1,10 +1,14 @@
 /**
- * Mirrors kitchen-pal-api's models/themes.py token vocabulary exactly (19
- * color keys + radius), which in turn matches src/app/globals.css's
- * existing semantic CSS variable names. Both the admin editor and the
- * runtime theme-injection component iterate CORE_THEME_TOKEN_KEYS rather
- * than hand-duplicating this list, so they can never drift out of sync
- * with each other.
+ * The single source of truth for this package's semantic token vocabulary
+ * (19 color keys + radius). Every consuming app is expected to build its
+ * theme UI and runtime theme application on top of CORE_THEME_TOKEN_KEYS
+ * rather than hand-duplicating this list, so one app's token set cannot
+ * drift from another's.
+ *
+ * The service that stores themes keeps its own copy of this list, and the
+ * two have to be updated in step by hand -- nothing here can enforce it.
+ * If they drift, an app emits tokens the service will refuse to store, or
+ * the service stores tokens no app ever emits.
  */
 
 export const CORE_THEME_TOKEN_KEYS = [
@@ -54,15 +58,16 @@ export function defineVocabulary(extensions: readonly string[] = []): ThemeVocab
   return { keys: [...CORE_THEME_TOKEN_KEYS, ...extensions], extensions: [...extensions] };
 }
 
-/** camelCase token key -> the actual CSS custom property it overrides.
- * Used by both the runtime injector and the admin preview pane so neither
- * has to hand-write the camelCase-to-kebab-case conversion. */
+/** camelCase token key -> the actual CSS custom property it overrides,
+ * so consumers never have to hand-write the camelCase-to-kebab-case
+ * conversion themselves. */
 export function cssVarName(key: string): string {
   return `--${key.replace(/([A-Z])/g, "-$1").toLowerCase()}`;
 }
 
-/** Token categories for the admin editor, mirroring globals.css's own
- * visual grouping of its semantic tokens. */
+/** Groups tokens for presentation in a theme-editing UI. A consuming app
+ * may use this grouping to organize its own editor layout; it is a
+ * convenience, not a requirement. */
 export const THEME_TOKEN_CATEGORIES: { label: string; keys: string[] }[] = [
   { label: "Surfaces", keys: ["background", "foreground", "card", "cardForeground", "popover", "popoverForeground"] },
   {
@@ -95,13 +100,13 @@ export function isValidRadius(value: string): boolean {
 }
 
 /** Renders a full ThemeTokens object as CSS text overriding :root (light)
- * and .dark (dark), inside an optional selector prefix -- used both for
- * the app-wide runtime override (no prefix) and the admin preview pane
- * (scoped to a container so editing a draft never affects the rest of the
- * page). Every value is validated before being interpolated: this is the
- * actual mechanism behind "malformed payloads never crash rendering" on
- * the frontend side -- an invalid stored value is simply skipped rather
- * than injected as unsafe CSS text. */
+ * and .dark (dark), inside an optional selector prefix -- omit it to
+ * apply tokens page-wide, or pass a scope selector so a consumer can
+ * apply tokens to a contained subtree (e.g. a preview surface) instead of
+ * the whole page. Every value is validated before being interpolated:
+ * this is the actual mechanism behind "malformed payloads never crash
+ * rendering" -- an invalid stored value is simply skipped rather than
+ * injected as unsafe CSS text. */
 export function themeTokensToCss(
   tokens: ThemeTokens,
   vocabulary: ThemeVocabulary,
