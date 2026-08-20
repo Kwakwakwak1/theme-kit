@@ -63,4 +63,33 @@ describe("createThemeInitScript", () => {
     localStorage.setItem("fp-theme-tokens", "{not json");
     expect(() => run("fp-theme-tokens")).not.toThrow();
   });
+
+  it("throws on an uppercase storageKey", () => {
+    expect(() => createThemeInitScript("FP-theme-tokens")).toThrow(
+      'storageKey must be lowercase kebab-case, got "FP-theme-tokens"',
+    );
+  });
+
+  it("throws on a storageKey with an underscore", () => {
+    expect(() => createThemeInitScript("fp_theme_tokens")).toThrow(
+      'storageKey must be lowercase kebab-case, got "fp_theme_tokens"',
+    );
+  });
+
+  it("throws on an empty storageKey", () => {
+    expect(() => createThemeInitScript("")).toThrow(
+      'storageKey must be lowercase kebab-case, got ""',
+    );
+  });
+
+  it("throws on a storageKey with a leading or trailing hyphen", () => {
+    expect(() => createThemeInitScript("-foo")).toThrow(
+      'storageKey must be lowercase kebab-case, got "-foo"',
+    );
+  });
+
+  it("does not throw for a valid kebab-case storageKey", () => {
+    expect(() => createThemeInitScript("fp-theme-tokens")).not.toThrow();
+    expect(createThemeInitScript("fp-theme-tokens").length).toBeGreaterThan(0);
+  });
 });
