@@ -34,6 +34,29 @@ npm install @kwakwakwak1/theme-kit
 `react` and `next-themes` are peer dependencies — install them in the
 consuming app if they aren't already there.
 
+## Two entry points: server-safe root, client `/react`
+
+The package is split across two entry points so it works from both
+Server and Client Components in a Next.js App Router app:
+
+- **`@kwakwakwak1/theme-kit`** -- the token vocabulary, palette
+  generator, presets, and `createThemeInitScript`. None of it carries a
+  `"use client"` boundary, so it's safe to import from a Server
+  Component -- in particular, `createThemeInitScript` is meant to be
+  called directly in a root layout (see below).
+- **`@kwakwakwak1/theme-kit/react`** -- `ThemeProvider`, `ThemeSync`,
+  `ThemePreviewProvider`, `useThemePreview`, and `ThemePreviewBanner`.
+  This entry is built with a `"use client"` boundary over the whole
+  bundle, because these are components with hooks and effects that only
+  run in the browser.
+
+Importing a React component from the root entry (or vice versa) doesn't
+work -- they're intentionally separate builds. Bundling them together
+would either strip `"use client"` from the components (breaking them in
+apps that enforce the boundary) or mark `createThemeInitScript` as a
+client reference, which throws when called from the Server Component
+root layout that's supposed to call it.
+
 ## Token vocabulary
 
 `CORE_THEME_TOKEN_KEYS` is the single source of truth for the shared
@@ -112,8 +135,46 @@ asks for one (`createThemeInitScript`, `ThemeSync`).
 
 ## React layer
 
+All exports below come from `@kwakwakwak1/theme-kit/react`, not the
+package root -- see [Two entry points](#two-entry-points-server-safe-root-client-react) above.
+
 - `ThemeProvider` -- a thin re-export wrapper around `next-themes`'
-  `ThemeProvider`, for light/dark mode switching.
+  `ThemeProvider`, for light/dark mode switching. Mount it in the root
+  layout, inside the `<body>`, wrapping `children`:
+
+  ```tsx
+  import Script from "next/script";
+  import { createThemeInitScript } from "@kwakwakwak1/theme-kit";
+  import { ThemeProvider } from "@kwakwakwak1/theme-kit/react";
+
+  const STORAGE_KEY = "fp-theme-tokens"; // pick one per app -- see below
+
+  export default function RootLayout({ children }: { children: React.ReactNode }) {
+    return (
+      <html lang="en" suppressHydrationWarning>
+        <head>
+          <Script
+            id="theme-init"
+            strategy="beforeInteractive"
+            dangerouslySetInnerHTML={{ __html: createThemeInitScript(STORAGE_KEY) }}
+          />
+        </head>
+        <body>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            {children}
+          </ThemeProvider>
+        </body>
+      </html>
+    );
+  }
+  ```
+
+  Note the split: `createThemeInitScript` runs in the root layout itself
+  (a Server Component) and comes from the package root, while
+  `ThemeProvider` is a Client Component and comes from `/react` --
+  mounting it here doesn't make the layout itself a Client Component,
+  since only `ThemeProvider` and its subtree cross that boundary.
+
 - `ThemeSync` -- applies an already-resolved theme by injecting a
   `<style>` tag that overrides the same CSS custom properties a
   consuming app's global stylesheet already defines, so every existing
@@ -122,7 +183,8 @@ asks for one (`createThemeInitScript`, `ThemeSync`).
   init script above reads on the next page load.
 
   ```tsx
-  import { ThemeSync, defineVocabulary } from "@kwakwakwak1/theme-kit";
+  import { defineVocabulary } from "@kwakwakwak1/theme-kit";
+  import { ThemeSync } from "@kwakwakwak1/theme-kit/react";
 
   const vocabulary = defineVocabulary();
 
