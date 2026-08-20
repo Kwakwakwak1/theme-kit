@@ -50,6 +50,14 @@ Server and Client Components in a Next.js App Router app:
   bundle, because these are components with hooks and effects that only
   run in the browser.
 
+**Shared types come from the root entry only.** `ThemeTokens` and
+`ThemeVocabulary` are exported from `@kwakwakwak1/theme-kit`, not from
+`/react`. Import types there, even when typing components from `/react`:
+
+```ts
+import type { ThemeTokens } from "@kwakwakwak1/theme-kit";
+```
+
 Importing a React component from the root entry (or vice versa) doesn't
 work -- they're intentionally separate builds. Bundling them together
 would either strip `"use client"` from the components (breaking them in
@@ -184,7 +192,7 @@ package root -- see [Two entry points](#two-entry-points-server-safe-root-client
 
   ```tsx
   import { defineVocabulary } from "@kwakwakwak1/theme-kit";
-  import { ThemeSync } from "@kwakwakwak1/theme-kit/react";
+  import { ThemeSync, useThemePreview } from "@kwakwakwak1/theme-kit/react";
 
   const vocabulary = defineVocabulary();
 
