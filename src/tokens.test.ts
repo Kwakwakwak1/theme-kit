@@ -3,6 +3,7 @@ import {
   CORE_THEME_TOKEN_KEYS,
   cssVarName,
   defineVocabulary,
+  FINANCE_TOKEN_EXTENSIONS,
   isValidHexColor,
   isValidRadius,
   normalizeHexInput,
@@ -97,5 +98,17 @@ describe("themeTokensToCss", () => {
     const css = themeTokensToCss(tokens, defineVocabulary(), "#preview");
     expect(css).toContain("#preview {");
     expect(css).toContain("#preview.dark, #preview .dark {");
+  });
+});
+
+describe("FINANCE_TOKEN_EXTENSIONS", () => {
+  it("declares the four ledger tokens", () => {
+    expect(FINANCE_TOKEN_EXTENSIONS).toEqual([
+      "positive", "positiveForeground", "negative", "negativeForeground",
+    ]);
+  });
+
+  it("builds a valid 23-key vocabulary", () => {
+    expect(defineVocabulary(FINANCE_TOKEN_EXTENSIONS).keys).toHaveLength(23);
   });
 });

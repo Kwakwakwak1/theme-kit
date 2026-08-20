@@ -125,3 +125,13 @@ export function themeTokensToCss(
 
   return `${lightPrefix} {\n${radiusRule}${rulesFor(tokens.light)}\n}\n${darkPrefix} {\n${rulesFor(tokens.dark)}\n}`;
 }
+
+/**
+ * finance-pal's extension tokens. Income and expense colors must come from
+ * the active theme: hardcoded green/red survives exactly until someone picks
+ * a custom palette. Declared here rather than in the app so the admin theme
+ * editor and the service's token validation both know them by name.
+ */
+export const FINANCE_TOKEN_EXTENSIONS = [
+  "positive", "positiveForeground", "negative", "negativeForeground",
+] as const;
