@@ -1,0 +1,46 @@
+{
+  "name": "@kwakwakwak1/theme-kit",
+  "version": "0.1.0",
+  "description": "Shared design tokens, palette generator, and theme injector for kwakwakwak apps",
+  "license": "UNLICENSED",
+  "private": false,
+  "type": "module",
+  "files": ["dist"],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "next-themes": "^0.4.0",
+    "react": "^18"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.2",
+    "@types/react": "^18",
+    "jsdom": "29.1.1",
+    "next-themes": "^0.4.6",
+    "react": "^18",
+    "react-dom": "^18",
+    "tsup": "^8.5.0",
+    "typescript": "^5",
+    "vitest": "3.2.7"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kwakwakwak1/theme-kit.git"
+  }
+}
