@@ -31,8 +31,8 @@ describe("generateThemeFromPalette", () => {
     }
   });
 
-  it("emits a valid radius", () => {
-    expect(generateThemeFromPalette(palette).radius).toMatch(/^\d+(\.\d+)?(px|rem)$/);
+  it("leaves radius empty — it cannot be derived from colors, so the caller supplies it", () => {
+    expect(generateThemeFromPalette(palette).radius).toBe("");
   });
 
   it("is deterministic", () => {

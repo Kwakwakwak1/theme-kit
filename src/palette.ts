@@ -184,7 +184,10 @@ interface GenerateOptions {
  * background/primary/accent/etc.) is auto-detected by lightness and
  * saturation, matching how a raw 4-swatch "popular palette" has no
  * pre-assigned roles. `seed` lets the caller re-derive a different, still
- * contrast-safe, styling from the same 4 colors ("mix it up"). */
+ * contrast-safe, styling from the same 4 colors ("mix it up").
+ *
+ * Note: `radius` is intentionally left empty because corner radius cannot be
+ * derived from colors alone — the caller provides it via styling or defaults. */
 export function generateThemeFromPalette(colors: [string, string, string, string], options: GenerateOptions = {}): ThemeTokens {
   const rng = mulberry32(options.seed ?? 0);
   const { darkest, lightest, primarySource, accentSource, secondarySource, neutralSource } = classify(colors);
@@ -294,7 +297,7 @@ export function generateThemeFromPalette(colors: [string, string, string, string
     };
   }
 
-  return { light: buildVariant("light"), dark: buildVariant("dark"), radius: "0.5rem" };
+  return { light: buildVariant("light"), dark: buildVariant("dark"), radius: "" };
 }
 
 /** True once all 4 palette colors are valid hex -- gates the actions a
