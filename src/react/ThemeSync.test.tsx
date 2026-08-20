@@ -9,6 +9,12 @@ const tokens: ThemeTokens = {
   radius: "0.75rem",
 };
 
+const preview: ThemeTokens = {
+  light: Object.fromEntries(CORE_THEME_TOKEN_KEYS.map((k) => [k, "#ff00aa"])) as ThemeTokens["light"],
+  dark: Object.fromEntries(CORE_THEME_TOKEN_KEYS.map((k) => [k, "#00ffaa"])) as ThemeTokens["dark"],
+  radius: "0.75rem",
+};
+
 const vocabulary = defineVocabulary();
 
 describe("ThemeSync", () => {
@@ -50,5 +56,31 @@ describe("ThemeSync", () => {
     );
     expect(document.querySelectorAll("#custom-theme-override")).toHaveLength(1);
     expect(document.getElementById("custom-theme-override")!.textContent).toContain("--primary: #ff0000;");
+  });
+
+  it("renders a preview but caches only the resolved tokens", () => {
+    render(
+      <ThemeSync tokens={tokens} preview={preview} vocabulary={vocabulary} storageKey="fp-theme-tokens" />,
+    );
+    expect(document.getElementById("custom-theme-override")?.textContent).toContain("--primary: #ff00aa;");
+    expect(JSON.parse(localStorage.getItem("fp-theme-tokens")!)).toEqual(tokens);
+  });
+
+  it("reverts to the resolved theme when the preview is exited", () => {
+    const { rerender } = render(
+      <ThemeSync tokens={tokens} preview={preview} vocabulary={vocabulary} storageKey="fp-theme-tokens" />,
+    );
+    rerender(
+      <ThemeSync tokens={tokens} preview={null} vocabulary={vocabulary} storageKey="fp-theme-tokens" />,
+    );
+    expect(document.getElementById("custom-theme-override")?.textContent).toContain("--primary: #123634;");
+  });
+
+  it("caches nothing for a preview alone with tokens null", () => {
+    render(
+      <ThemeSync tokens={null} preview={preview} vocabulary={vocabulary} storageKey="fp-theme-tokens" />,
+    );
+    expect(document.getElementById("custom-theme-override")?.textContent).toContain("--primary: #ff00aa;");
+    expect(localStorage.getItem("fp-theme-tokens")).toBeNull();
   });
 });

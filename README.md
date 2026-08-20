@@ -118,8 +118,8 @@ asks for one (`createThemeInitScript`, `ThemeSync`).
   `<style>` tag that overrides the same CSS custom properties a
   consuming app's global stylesheet already defines, so every existing
   component picks it up with no per-component changes. It also caches
-  the tokens it's given under `storageKey`, which is what the init
-  script above reads on the next page load.
+  the resolved `tokens` it's given under `storageKey`, which is what the
+  init script above reads on the next page load.
 
   ```tsx
   import { ThemeSync, defineVocabulary } from "@kwakwakwak1/theme-kit";
@@ -128,7 +128,15 @@ asks for one (`createThemeInitScript`, `ThemeSync`).
 
   function AppThemeSync() {
     const tokens = useMyAppsOwnThemeQuery(); // this app's own fetching/auth
-    return <ThemeSync tokens={tokens} vocabulary={vocabulary} storageKey="fp-theme-tokens" />;
+    const { preview } = useThemePreview(); // optional, see below
+    return (
+      <ThemeSync
+        tokens={tokens}
+        preview={preview?.tokens}
+        vocabulary={vocabulary}
+        storageKey="fp-theme-tokens"
+      />
+    );
   }
   ```
 
@@ -139,9 +147,17 @@ asks for one (`createThemeInitScript`, `ThemeSync`).
   fetch) it deliberately leaves whatever style is already applied in
   place -- the init script's cached theme, or the compiled-in defaults --
   rather than clearing it and flashing back to default on a transient
-  refetch. Only ever pass the app's real resolved theme into `tokens`;
-  see below for previewing an unpublished edit without affecting the
-  cache.
+  refetch.
+
+  `tokens` and `preview` are deliberately separate props, and the
+  package -- not the consuming app -- owns how they combine: the
+  rendered theme is `preview ?? tokens`, but only `tokens` is ever
+  cached. An in-progress, unpublished preview is shown on screen but
+  never written to `storageKey`, so it can never leak into the next
+  page load -- the init script's cache always reflects the theme the
+  user is actually supposed to see, not whatever was being previewed
+  when the tab last closed. Just pass `tokens` and omit `preview`
+  entirely if an app has no preview mechanism.
 
 - `ThemePreviewProvider` / `useThemePreview` / `ThemePreviewBanner` --
   an optional mechanism for a theme editor UI to preview an in-progress,
@@ -150,13 +166,10 @@ asks for one (`createThemeInitScript`, `ThemeSync`).
   never sent to the server), so it can't leak to another user or tab and
   resets the moment the page reloads. `ThemePreviewBanner` renders a
   small "Previewing an unpublished theme" indicator with an exit action
-  whenever a preview is active. A consuming app decides how to prefer
-  `useThemePreview().preview?.tokens` over its fetched resolved theme when
-  rendering -- but should keep caching (the `tokens` prop passed to
-  `ThemeSync`) tied to the real resolved theme only, never the transient
-  preview, since the init script's cache must always reflect what the
-  user is actually supposed to see on their next visit, not whatever was
-  being previewed when the tab last closed.
+  whenever a preview is active. Pass `useThemePreview().preview?.tokens`
+  straight into `ThemeSync`'s `preview` prop (see above); `ThemeSync`
+  takes care of rendering it while keeping the cache tied to the real
+  resolved theme.
 
 ## Publishing
 

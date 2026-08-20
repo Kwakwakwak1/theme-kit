@@ -6,20 +6,31 @@ import { themeTokensToCss, type ThemeTokens, type ThemeVocabulary } from "../tok
 const STYLE_ELEMENT_ID = "custom-theme-override";
 
 export interface ThemeSyncProps {
-  /** The resolved theme for this user in this app, or null while loading,
-   * logged out, or after a failed fetch. Each app owns its own fetching --
-   * this package must not depend on any app's auth or query client. */
+  /** The user's resolved theme for this app, or null while loading, logged
+   * out, or after a failed fetch. This is the only value ever cached. */
   tokens: ThemeTokens | null;
+  /** An in-progress, unpublished theme being previewed. Rendered when
+   * present, never cached -- the cache is what the pre-paint init script
+   * applies on the next load, so it must hold the theme the user is
+   * actually supposed to see. */
+  preview?: ThemeTokens | null;
   vocabulary: ThemeVocabulary;
   /** Per app: "fp-theme-tokens", "kp-theme-tokens", ... */
   storageKey: string;
 }
 
 /**
- * Applies the resolved theme by injecting a <style> tag overriding the same
- * CSS custom properties a consuming app's own global stylesheet already
- * defines, so every component picks it up with no component-level changes
- * anywhere.
+ * Applies the resolved theme (or, when present, an in-progress preview) by
+ * injecting a <style> tag overriding the same CSS custom properties a
+ * consuming app's own global stylesheet already defines, so every
+ * component picks it up with no component-level changes anywhere.
+ *
+ * Caching and rendering are deliberately split: `preview` is rendered but
+ * never cached, while `tokens` is the only value ever written to
+ * `storageKey`. The cache is what the pre-paint init script applies on the
+ * next page load, so it must always hold the theme the user is actually
+ * supposed to see -- not whatever an admin happened to be previewing when
+ * the tab last closed.
  *
  * Does not block first paint: the blocking init script in the root layout
  * has already applied whatever this app cached on the user's last visit, so
@@ -27,7 +38,7 @@ export interface ThemeSyncProps {
  * On a first-ever visit or a fetch failure nothing is injected and the
  * compiled-in defaults apply untouched.
  */
-export function ThemeSync({ tokens, vocabulary, storageKey }: ThemeSyncProps) {
+export function ThemeSync({ tokens, preview, vocabulary, storageKey }: ThemeSyncProps) {
   useEffect(() => {
     if (!tokens) return;
     try {
@@ -38,8 +49,10 @@ export function ThemeSync({ tokens, vocabulary, storageKey }: ThemeSyncProps) {
     }
   }, [tokens, storageKey]);
 
+  const rendered = preview ?? tokens;
+
   useEffect(() => {
-    if (!tokens) {
+    if (!rendered) {
       // Loading, logged out, or the fetch failed. Leave whatever is applied
       // (the init script's cached theme, or the compiled-in defaults) rather
       // than clearing it and flashing back to default on a transient refetch.
@@ -52,11 +65,11 @@ export function ThemeSync({ tokens, vocabulary, storageKey }: ThemeSyncProps) {
       document.head.appendChild(styleEl);
     }
     try {
-      styleEl.textContent = themeTokensToCss(tokens, vocabulary);
+      styleEl.textContent = themeTokensToCss(rendered, vocabulary);
     } catch {
       // Never let malformed tokens crash rendering.
     }
-  }, [tokens, vocabulary]);
+  }, [rendered, vocabulary]);
 
   return null;
 }
